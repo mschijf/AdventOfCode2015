@@ -1,4 +1,4 @@
-package adventofcode2016
+package adventofcode2015
 
 import java.io.File
 

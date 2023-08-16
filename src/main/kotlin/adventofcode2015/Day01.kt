@@ -1,4 +1,4 @@
-package adventofcode2016
+package adventofcode2015
 
 fun main() {
     Day01(test = false).showResult()

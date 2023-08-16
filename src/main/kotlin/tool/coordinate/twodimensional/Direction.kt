@@ -27,7 +27,7 @@ enum class Direction(val directionSymbol: String, val directionLetter: String) {
         fun ofSymbol(s: String): Direction =
             Direction
                 .values()
-                .firstOrNull() { it.directionSymbol == s.uppercase() }
+                .firstOrNull() { it.directionSymbol == s }
                 ?: throw Exception("$s is not a symbol in Direction")
 
         fun ofLetter(s: String): Direction =
