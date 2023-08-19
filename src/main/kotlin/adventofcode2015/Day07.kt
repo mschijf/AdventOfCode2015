@@ -19,11 +19,11 @@ class Day07(test: Boolean) : PuzzleSolverAbstract(test) {
     }
 }
 
-class Program(private val statementList: List<String>, override: String? = null) {
+class Program(statementList: List<String>, override: String? = null) {
     private val statementMap =
-        statementList.map { it.split("\\s".toRegex()) }.associateBy { it.last() } +
+        statementList.map { Statement.of(it) }.associateBy { it.output } +
                 if (override != null) {
-                    listOf(override.split("\\s".toRegex())).associateBy { it.last() }
+                    listOf(Statement.of(override)).associateBy { it.output }
                 } else {
                     emptyMap()
                 }
@@ -46,31 +46,21 @@ class Program(private val statementList: List<String>, override: String? = null)
         }
 
         val statement = statementMap[word]!!
-        val result = when (statement.getOperator()) {
-            "SET" -> valueOf(statement[0])
-            "NOT" -> valueOf(statement[1]).inv()
-            "OR" -> valueOf(statement[0]) or valueOf(statement[2])
-            "AND" -> valueOf(statement[0]) and valueOf(statement[2])
-            "LSHIFT" -> (valueOf(statement[0]).toUInt() shl valueOf(statement[2]).toInt()).toUShort()
-            "RSHIFT" -> (valueOf(statement[0]).toUInt() shr valueOf(statement[2]).toInt()).toUShort()
+        val result = when (statement.operator) {
+            "SET" -> valueOf(statement.operand1)
+            "NOT" -> valueOf(statement.operand1).inv()
+            "OR" -> valueOf(statement.operand1) or valueOf(statement.operand2!!)
+            "AND" -> valueOf(statement.operand1) and valueOf(statement.operand2!!)
+            "LSHIFT" -> (valueOf(statement.operand1).toUInt() shl valueOf(statement.operand2!!).toInt()).toUShort()
+            "RSHIFT" -> (valueOf(statement.operand1).toUInt() shr valueOf(statement.operand2!!).toInt()).toUShort()
             else -> throw Exception("Unknown statement: $statement")
         }
-        register[statement.getOutputRegister()] = result
+        register[statement.output] = result
         return result
     }
-
-    private fun List<String>.getOperator() =
-        when (this.size) {
-            3 -> "SET"
-            4 -> "NOT"
-            else -> this[1]
-        }
-
-    private fun List<String>.getOutputRegister() =
-        this.last().trim()
 }
 
-class Statement(operator: String, operand1: String, operand2: String?) {
+data class Statement(val operator: String, val operand1: String, val operand2: String?, val output: String) {
     companion object {
         fun of(raw: String): Statement {
             val wordList = raw.split("\\s".toRegex())
@@ -79,7 +69,7 @@ class Statement(operator: String, operand1: String, operand2: String?) {
                 4 -> Triple("NOT", wordList[1], null)
                 else -> Triple(wordList[1], wordList[0], wordList[2])
             }
-            return Statement(operator, operand1, operand2)
+            return Statement(operator, operand1, operand2, wordList.last())
         }
     }
 
