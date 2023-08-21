@@ -10,14 +10,19 @@ class Day12(test: Boolean) : PuzzleSolverAbstract(test) {
 
     override fun resultPartOne(): Any {
         val t = Thing.of(inputLines.first())
-        return t.sumOfNum()
+        return t.sumOfNum(checkRed = false)
+    }
+
+    override fun resultPartTwo(): Any {
+        val t = Thing.of(inputLines.first())
+        return t.sumOfNum(checkRed = true)
     }
 }
 
 
 
-abstract open class Thing {
-    abstract fun sumOfNum(): Int
+abstract class Thing {
+    abstract fun sumOfNum(checkRed: Boolean): Int
     abstract fun hasRed(): Boolean
 
     companion object {
@@ -32,8 +37,8 @@ abstract open class Thing {
     }
 }
 
-class MyString(val value: String): Thing() {
-    override fun sumOfNum() = 0
+class MyString(private val value: String): Thing() {
+    override fun sumOfNum(checkRed: Boolean) = 0
     override fun hasRed() = (value == "red")
 
     companion object {
@@ -43,9 +48,9 @@ class MyString(val value: String): Thing() {
     }
 }
 
-class MyNumber(val value: Int): Thing() {
+class MyNumber(private val value: Int): Thing() {
     override fun hasRed() = false
-    override fun sumOfNum() = value
+    override fun sumOfNum(checkRed: Boolean) = value
 
     companion object {
         fun of(rawInput: String): MyNumber {
@@ -54,54 +59,55 @@ class MyNumber(val value: Int): Thing() {
     }
 }
 
-class MyArray(val list: List<Thing>): Thing() {
+class MyArray(private val list: List<Thing>): Thing() {
     override fun hasRed() = false
-    override fun sumOfNum() = list.sumOf { it.sumOfNum() }
+    override fun sumOfNum(checkRed: Boolean) = list.sumOf { it.sumOfNum(checkRed) }
 
     companion object {
         fun of(rawInput: String): MyArray {
-            val list = rawInput.splitLevel('[', ']')
+            val list = rawInput.splitTopLevel()
             return MyArray(list.map{Thing.of(it)})
         }
     }
 }
 
-class MyObject(val map: Map<String, Thing>): Thing() {
+class MyObject(private val map: Map<String, Thing>): Thing() {
     override fun hasRed() = false
-    override fun sumOfNum() = if (map.values.none { it.hasRed() }) map.values.sumOf { it.sumOfNum() } else 0
+    override fun sumOfNum(checkRed: Boolean) = if (checkRed && map.values.any { it.hasRed() }) 0 else map.values.sumOf { it.sumOfNum(checkRed) }
 
     companion object {
         fun of(rawInput: String): MyObject {
-            val list = rawInput.splitLevel('{', '}')
-            return MyObject(list.associate{ it.substringBefore(":").removeSurrounding("\"") to Thing.of(it.substringAfter(":") ) })
+            val list = rawInput.splitTopLevel()
+            return MyObject(
+                list.associate{ entry ->
+                    entry.substringBefore(":").removeSurrounding("\"") to Thing.of(entry.substringAfter(":") )
+                })
         }
     }
 }
 
-private fun String.splitLevel(symbolOpen: Char, symbolClose: Char): List<String> {
+/**
+ * Annaame:
+ *    de string begint met '[' of met '{' en eindigt met het overeenkomende symbool
+ *    daarnaast is de ',' het scheidingsteken
+ */
+private fun String.splitTopLevel(): List<String> {
     var level = 0
     val result = mutableListOf<String>()
     val item = StringBuilder()
-    this.forEach { char ->
+    this.substring(1, this.length-1).forEach { char ->
         when (char) {
             '{', '[' -> {
-                if (level > 0) {
-                    item.append(char)
-                }
+                item.append(char)
                 level++
             }
             '}', ']' -> {
+                item.append(char)
                 level--
-                if (level == 0) {
-                    result.add(item.toString())
-                    return result
-                } else {
-                    item.append(char)
-                }
             }
             ',' -> {
-                if (level == 1) {
-                    result.add(item.toString())
+                if (level == 0) {
+                    result.add(item.toString().trim())
                     item.clear()
                 } else {
                     item.append(char)
@@ -112,7 +118,8 @@ private fun String.splitLevel(symbolOpen: Char, symbolClose: Char): List<String>
             }
         }
     }
-    throw Exception("Unexpected end of String parsing")
+    result.add(item.toString().trim())
+    return result
 }
 
 
