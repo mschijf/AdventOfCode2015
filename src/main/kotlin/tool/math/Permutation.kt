@@ -28,29 +28,29 @@ fun getCombinationList(size: Int, splitSize: Int): List<List<Int>> {
     return allCombinationsList
 }
 
-private fun makeList(elements: IntArray): List<Int> {
-    return elements.map { it }
+
+/**
+ * returns all permutations of the given list.
+ * each 'list' in the returned list of 'list's, conatins one of the permutations.
+ * be aware of the combinatorial explosion!
+ *
+ */
+
+inline fun <reified T> makeAllPermutations(elements: List<T>): List<List<T>> {
+    return makeAllPermutations(elements.size, elements.toTypedArray())
 }
 
-private fun swap(elements: IntArray, a: Int, b: Int) {
+private fun <T> swap(elements: Array<T>, a: Int, b: Int) {
     val tmp = elements[a]
     elements[a] = elements[b]
     elements[b] = tmp
 }
 
-// returns all permutations of the given list.
-// each 'list' in the returned list of 'list's, conatins one of the permutations.
-// be aware of the combinatoral explosion!
-//
-fun makeAllPermutations(elements: List<Int>): List<List<Int>> {
-    return makeAllPermutations(elements.size, elements.toIntArray())
-}
-
-private fun makeAllPermutations(n: Int, elements: IntArray): List<List<Int>> {
+fun <T> makeAllPermutations(n: Int, elements: Array<T>): List<List<T>> {
     if (n == 1) {
-        return listOf(makeList(elements))
+        return listOf(elements.map { it })
     } else {
-        val localList = mutableListOf<List<Int>>()
+        val localList = mutableListOf<List<T>>()
         for (i in 0 until n - 1) {
             localList.addAll(makeAllPermutations(n - 1, elements))
             if (n % 2 == 0) {
