@@ -36,22 +36,22 @@ fun getCombinationList(size: Int, splitSize: Int): List<List<Int>> {
  *
  */
 
-inline fun <reified T> makeAllPermutations(elements: List<T>): List<List<T>> {
-    return makeAllPermutations(elements.size, elements.toTypedArray())
+fun <T> makeAllPermutations(elements: List<T>): List<List<T>> {
+    return makeAllPermutations(elements.size, elements.toMutableList())
 }
 
-private fun <T> swap(elements: Array<T>, a: Int, b: Int) {
+private fun <T> swap(elements: MutableList<T>, a: Int, b: Int) {
     val tmp = elements[a]
     elements[a] = elements[b]
     elements[b] = tmp
 }
 
-fun <T> makeAllPermutations(n: Int, elements: Array<T>): List<List<T>> {
+private fun <T> makeAllPermutations(n: Int, elements: MutableList<T>): List<List<T>> {
     if (n == 1) {
-        return listOf(elements.map { it })
+        return listOf(elements.toList())
     } else {
         val localList = mutableListOf<List<T>>()
-        for (i in 0 until n - 1) {
+        for (i in 0.. n - 2) {
             localList.addAll(makeAllPermutations(n - 1, elements))
             if (n % 2 == 0) {
                 swap(elements, i, n - 1)
