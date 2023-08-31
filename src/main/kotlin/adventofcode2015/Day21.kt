@@ -18,7 +18,10 @@ class Day21(test: Boolean) : PuzzleSolverAbstract(test) {
 
     private val itemList = inputLines
         .splitByCondition { it.isEmpty()}
-        .map{itemList -> itemList.drop(1).map{Item.of(it)}}
+        .map{itemList ->
+            itemList
+                .drop(1)
+                .map{Item.of(it)}}
 
     private val weaponList = itemList[0]
     private val armorList = itemList[1]
@@ -30,7 +33,9 @@ class Day21(test: Boolean) : PuzzleSolverAbstract(test) {
     private val boss = Player(100, 8, 2)
 
     override fun resultPartOne(): Any {
-        return makePlayerList().filter{player -> player.beats(boss)}.minOf { player -> player.cost }
+        return makePlayerList()
+            .filter{player -> player.beats(boss)}
+            .minOf { player -> player.cost }
     }
 
     override fun resultPartTwo(): Any {
@@ -68,15 +73,15 @@ class Day21(test: Boolean) : PuzzleSolverAbstract(test) {
 
 data class Item(val name: String, val cost: Int, val damage: Int, val armor: Int) {
     companion object {
-        fun of(rawInput: String): Item {
-            val rp = rawInput.split("\\s+".toRegex())
-            return Item(
-                    name = rp.subList(0,rp.size-3).joinToString(" "),
-                    cost = rp[rp.size-3].toInt(),
-                    damage = rp[rp.size-2].toInt(),
-                    armor = rp[rp.size-1].toInt(),
-            )
-        }
+        fun of(rawInput: String) =
+            rawInput.split("\\s+".toRegex()).let{ rp ->
+                Item(
+                    name = rp.subList(0, rp.size - 3).joinToString(" "),
+                    cost = rp[rp.size - 3].toInt(),
+                    damage = rp[rp.size - 2].toInt(),
+                    armor = rp[rp.size - 1].toInt(),
+                )
+            }
     }
 }
 
