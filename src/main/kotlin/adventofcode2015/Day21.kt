@@ -8,12 +8,14 @@ fun main() {
     Day21(test=false).showResult()
 }
 
-//Puzzle Input:
+// The weapon/armor/ring prices have been copied to the example and input file
+// the puzzle input has been added directly in the 'bossPlayer'
+
+//Puzzle Input (boss):
 //  Hit Points: 100
 //  Damage: 8
 //  Armor: 2
 
-//copy/paste the weapon/armo/ring prices in the input files
 class Day21(test: Boolean) : PuzzleSolverAbstract(test) {
 
     private val itemList = inputLines
