@@ -148,15 +148,17 @@ data class GameStatus(
         )
     }
 
+    val extra = 1
+
     fun magicMissile(): GameStatus? {
         val cost = 53
-        if (manaPoints >= cost) {
+        if (manaPoints >= cost && hitPoints > extra) {
             return GameStatus(
                 shieldTimer = max(shieldTimer-1, 0),
                 poisonTimer = max(poisonTimer-1, 0),
                 rechargeTimer = max(rechargeTimer-1, 0),
 
-                hitPoints = hitPoints,
+                hitPoints = hitPoints - extra,
                 manaSpend = manaSpend + cost,
                 manaPoints = manaPoints  - cost + if (rechargeTimer > 0) 101 else 0,
 
@@ -169,13 +171,13 @@ data class GameStatus(
 
     fun drain(): GameStatus? {
         val cost = 73
-        if (manaPoints >= cost) {
+        if (manaPoints >= cost && hitPoints > extra) {
             return GameStatus(
                 shieldTimer = max(shieldTimer-1, 0),
                 poisonTimer = max(poisonTimer-1, 0),
                 rechargeTimer = max(rechargeTimer-1, 0),
 
-                hitPoints = hitPoints + 2,
+                hitPoints = hitPoints + 2 - extra,
                 manaSpend = manaSpend + cost,
                 manaPoints = manaPoints - cost + if (rechargeTimer > 0) 101 else 0,
 
@@ -189,13 +191,13 @@ data class GameStatus(
 
     fun shield(): GameStatus? {
         val cost = 113
-        if (manaPoints >= cost && shieldTimer <= 1) {
+        if (manaPoints >= cost && shieldTimer <= 1 && hitPoints > extra) {
             return GameStatus(
                 shieldTimer = 6,
                 poisonTimer = max(poisonTimer-1, 0),
                 rechargeTimer = max(rechargeTimer-1, 0),
 
-                hitPoints = hitPoints,
+                hitPoints = hitPoints - extra,
                 manaSpend = manaSpend + cost,
                 manaPoints = manaPoints - cost + if (rechargeTimer > 0) 101 else 0,
 
@@ -208,13 +210,13 @@ data class GameStatus(
 
     fun poison(): GameStatus? {
         val cost = 173
-        if (manaPoints >= cost && poisonTimer <= 1) {
+        if (manaPoints >= cost && poisonTimer <= 1 && hitPoints > extra) {
             return GameStatus(
                 shieldTimer = max(shieldTimer-1, 0),
                 poisonTimer = 6,
                 rechargeTimer = max(rechargeTimer-1, 0),
 
-                hitPoints = hitPoints,
+                hitPoints = hitPoints - extra,
                 manaSpend = manaSpend + cost,
                 manaPoints = manaPoints - cost + if (rechargeTimer > 0) 101 else 0,
 
@@ -228,13 +230,13 @@ data class GameStatus(
 
     fun recharge(): GameStatus? {
         val cost = 229
-        if (manaPoints >= cost && rechargeTimer <= 1) {
+        if (manaPoints >= cost && rechargeTimer <= 1 && hitPoints > extra) {
             return GameStatus(
                 shieldTimer = max(shieldTimer-1, 0),
                 poisonTimer = max(poisonTimer-1, 0),
                 rechargeTimer = 5,
 
-                hitPoints = hitPoints,
+                hitPoints = hitPoints - extra,
                 manaSpend = manaSpend + cost,
                 manaPoints = manaPoints - cost + if (rechargeTimer > 0) 101 else 0,
 
