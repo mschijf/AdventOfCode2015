@@ -14,82 +14,61 @@ fun main() {
 //  Hit Points: 51
 //  Damage: 9
 
+const val POISON_DAMAGE = 3
+const val MISSILE_DAMAGE = 4
+const val DRAIN_DAMAGE = 2
+
+const val POISON_TIMER = 6
+const val SHIELD_TIMER = 6
+const val RECHARGE_TIMER = 5
+
+const val MAGIC_MISSILE_COST = 53
+const val DRAIN_COST = 73
+const val SHIELD_COST = 113
+const val POISON_COST = 173
+const val RECHARGE_COST = 229
+
+const val RECHARGE_MANA_POINTS = 101
+
 
 class Day22(test: Boolean) : PuzzleSolverAbstract(test) {
 
+    private fun startGameStatus(hasExtraCost: Boolean) =
+            GameStatus(
+                shieldTimer = 0, poisonTimer = 0, rechargeTimer = 0,
+                hitPoints = 50, manaSpend = 0, manaPoints = 500,
+                bossHitPoints = 51, damage = 9,
+                playerHasExtraCost = hasExtraCost
+            )
+
     //900 is correct
     override fun resultPartOne(): Any {
-        val startGameStatus =
-        if (test) {
-            GameStatus(
-                shieldTimer = 0,
-                poisonTimer = 0,
-                rechargeTimer = 0,
-
-                manaSpend = 0,
-                hitPoints = 10,
-                manaPoints = 250,
-
-                bossHitPoints = 14,
-                damage = 8
-            )
-        } else {
-            GameStatus(
-                shieldTimer = 0,
-                poisonTimer = 0,
-                rechargeTimer = 0,
-
-                hitPoints = 50,
-                manaSpend = 0,
-                manaPoints = 500,
-
-                bossHitPoints = 51,
-                damage = 9
-            )
-        }
-        return run(startGameStatus)
+        return run(startGameStatus(false))
     }
 
+    //1216 is correct
     override fun resultPartTwo(): Any {
-        val startGameStatus =
-                GameStatus(
-                    shieldTimer = 0,
-                    poisonTimer = 0,
-                    rechargeTimer = 0,
-
-                    hitPoints = 50,
-                    manaSpend = 0,
-                    manaPoints = 500,
-
-                    bossHitPoints = 51,
-                    damage = 9
-                )
-        return run(startGameStatus)
+        return run(startGameStatus(true))
     }
-
-
+    
     private fun run(startGameStatus: GameStatus): Int {
         val compareByCost: Comparator<GameStatus> = compareBy { it.manaSpend }
         val priorityQueue = PriorityQueue(compareByCost)
 
-        priorityQueue.addAll(startGameStatus.nextStatuses())
+        priorityQueue.addAll(startGameStatus.getStatusListAfterAllPossiblePlayerMoves())
         while (priorityQueue.isNotEmpty()) {
             val current = priorityQueue.remove()
-            if (!current.bossStillAlive()) {
-                //found!!
+            if (current.bossIsKilled()) {
                 return current.manaSpend
             }
 
-            val statusAfterBossMove = current.doBossMove()
-            if (!statusAfterBossMove.bossStillAlive()) {
-                //found!!
+            val statusAfterBossMove = current.getStatusAfterBossMove()
+            if (statusAfterBossMove.bossIsKilled()) {
                 return current.manaSpend
             }
 
             if (statusAfterBossMove.playerStillAlive()) {
-                statusAfterBossMove.nextStatuses().forEach { status ->
-                    priorityQueue.add(status)
-                }
+                priorityQueue.addAll(statusAfterBossMove.getStatusListAfterAllPossiblePlayerMoves())
             }
         }
         return -1
@@ -108,15 +87,34 @@ data class GameStatus(
 
     val bossHitPoints: Int,
     val damage: Int,
+
+    val playerHasExtraCost: Boolean
 ) {
+
+    private val extra = if(playerHasExtraCost) 1 else 0
 
     override fun toString(): String {
         return "Player has $hitPoints hit points, 0 armor, $manaPoints mana\n" +
                 "Boss has $bossHitPoints hit points"
     }
 
-    fun doBossMove(): GameStatus {
-        val newBossHitPoints = bossHitPoints - if (poisonTimer > 0) 3 else 0
+    fun bossIsKilled(): Boolean {
+        return bossHitPoints <= 0
+    }
+
+    fun playerStillAlive(): Boolean {
+        return hitPoints > 0
+    }
+
+    private fun poisonDamage() =
+        if (poisonTimer > 0) POISON_DAMAGE else 0
+
+    private fun rechargeManaPoints() =
+        if (rechargeTimer > 0) RECHARGE_MANA_POINTS else 0
+
+    fun getStatusAfterBossMove(): GameStatus {
+        val cost = 0
+        val newBossHitPoints = bossHitPoints - poisonDamage()
         return GameStatus(
             shieldTimer = max(shieldTimer-1, 0),
             poisonTimer = max(poisonTimer-1, 0),
@@ -126,32 +124,21 @@ data class GameStatus(
                 hitPoints - if (shieldTimer > 0) damage-7 else damage
             else
                 hitPoints,
-            manaSpend = manaSpend,
-            manaPoints = manaPoints + if (rechargeTimer > 0) 101 else 0,
+            manaSpend = manaSpend + cost,
+            manaPoints = manaPoints - cost + rechargeManaPoints(),
 
             bossHitPoints = newBossHitPoints,
-            damage = damage
+            damage = damage,
+            playerHasExtraCost
         )
     }
 
-    fun bossStillAlive(): Boolean {
-        return bossHitPoints > 0
+    fun getStatusListAfterAllPossiblePlayerMoves(): List<GameStatus> {
+        return listOfNotNull( magicMissile(), drain(), shield(), poison(), recharge() )
     }
 
-    fun playerStillAlive(): Boolean {
-        return hitPoints > 0
-    }
-
-    fun nextStatuses(): List<GameStatus> {
-        return listOfNotNull(
-            magicMissile(), drain(), shield(), poison(), recharge()
-        )
-    }
-
-    val extra = 1
-
-    fun magicMissile(): GameStatus? {
-        val cost = 53
+    private fun magicMissile(): GameStatus? {
+        val cost = MAGIC_MISSILE_COST
         if (manaPoints >= cost && hitPoints > extra) {
             return GameStatus(
                 shieldTimer = max(shieldTimer-1, 0),
@@ -160,17 +147,18 @@ data class GameStatus(
 
                 hitPoints = hitPoints - extra,
                 manaSpend = manaSpend + cost,
-                manaPoints = manaPoints  - cost + if (rechargeTimer > 0) 101 else 0,
+                manaPoints = manaPoints - cost + rechargeManaPoints(),
 
-                bossHitPoints = bossHitPoints - 4 - if (poisonTimer > 0) 3 else 0,
-                damage = damage
+                bossHitPoints = bossHitPoints - poisonDamage() - MISSILE_DAMAGE,
+                damage = damage,
+                playerHasExtraCost
             )
         }
         return null
     }
 
-    fun drain(): GameStatus? {
-        val cost = 73
+    private fun drain(): GameStatus? {
+        val cost = DRAIN_COST
         if (manaPoints >= cost && hitPoints > extra) {
             return GameStatus(
                 shieldTimer = max(shieldTimer-1, 0),
@@ -179,86 +167,76 @@ data class GameStatus(
 
                 hitPoints = hitPoints + 2 - extra,
                 manaSpend = manaSpend + cost,
-                manaPoints = manaPoints - cost + if (rechargeTimer > 0) 101 else 0,
+                manaPoints = manaPoints - cost + rechargeManaPoints(),
 
-                bossHitPoints = bossHitPoints - 2 - if (poisonTimer > 0) 3 else 0,
-                damage = damage
+                bossHitPoints = bossHitPoints - poisonDamage() - DRAIN_DAMAGE,
+                damage = damage,
+                playerHasExtraCost
             )
         }
         return null
     }
 
 
-    fun shield(): GameStatus? {
-        val cost = 113
+    private fun shield(): GameStatus? {
+        val cost = SHIELD_COST
         if (manaPoints >= cost && shieldTimer <= 1 && hitPoints > extra) {
             return GameStatus(
-                shieldTimer = 6,
+                shieldTimer = SHIELD_TIMER,
                 poisonTimer = max(poisonTimer-1, 0),
                 rechargeTimer = max(rechargeTimer-1, 0),
 
                 hitPoints = hitPoints - extra,
                 manaSpend = manaSpend + cost,
-                manaPoints = manaPoints - cost + if (rechargeTimer > 0) 101 else 0,
+                manaPoints = manaPoints - cost + rechargeManaPoints(),
 
-                bossHitPoints = bossHitPoints - if (poisonTimer > 0) 3 else 0,
-                damage = damage
+                bossHitPoints = bossHitPoints - poisonDamage(),
+                damage = damage,
+                playerHasExtraCost
             )
         }
         return null
     }
 
-    fun poison(): GameStatus? {
-        val cost = 173
+    private fun poison(): GameStatus? {
+        val cost = POISON_COST
         if (manaPoints >= cost && poisonTimer <= 1 && hitPoints > extra) {
             return GameStatus(
                 shieldTimer = max(shieldTimer-1, 0),
-                poisonTimer = 6,
+                poisonTimer = POISON_TIMER,
                 rechargeTimer = max(rechargeTimer-1, 0),
 
                 hitPoints = hitPoints - extra,
                 manaSpend = manaSpend + cost,
-                manaPoints = manaPoints - cost + if (rechargeTimer > 0) 101 else 0,
+                manaPoints = manaPoints - cost + rechargeManaPoints(),
 
-                bossHitPoints = bossHitPoints - if (poisonTimer > 0) 3 else 0,
-                damage = damage
+                bossHitPoints = bossHitPoints - poisonDamage(),
+                damage = damage,
+                playerHasExtraCost
             )
         }
         return null
     }
 
 
-    fun recharge(): GameStatus? {
-        val cost = 229
+    private fun recharge(): GameStatus? {
+        val cost = RECHARGE_COST
         if (manaPoints >= cost && rechargeTimer <= 1 && hitPoints > extra) {
             return GameStatus(
                 shieldTimer = max(shieldTimer-1, 0),
                 poisonTimer = max(poisonTimer-1, 0),
-                rechargeTimer = 5,
+                rechargeTimer = RECHARGE_TIMER,
 
                 hitPoints = hitPoints - extra,
                 manaSpend = manaSpend + cost,
-                manaPoints = manaPoints - cost + if (rechargeTimer > 0) 101 else 0,
+                manaPoints = manaPoints - cost + rechargeManaPoints(),
 
-                bossHitPoints = bossHitPoints - if (poisonTimer > 0) 3 else 0,
-                damage = damage
+                bossHitPoints = bossHitPoints - poisonDamage(),
+                damage = damage,
+                playerHasExtraCost
             )
         }
         return null
     }
 
 }
-
-
-//
-// data class Spell(val name: String, val cost: Int, val damage: Int, val armor: Int, val heals: Int, val moreMana: Int, val last: Int)
-//
-//
-//private val spellList = listOf (
-//    Spell("Magic Missile", 53, 4, 0, 0, 0,1),
-//    Spell("Drain        ", 73, 2, 0, 2, 0, 1),
-//    Spell("Shield       ", 113, 0, 7, 0, 0,6),
-//    Spell("Poison       ", 173, 3, 0, 0, 0,6),
-//    Spell("Recharge     ", 229, 0, 0, 0, 101,5),
-//)
-//
